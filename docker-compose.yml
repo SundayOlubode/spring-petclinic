@@ -1,0 +1,54 @@
+# Define the services (containers)
+services:
+  # The Petclinic application service connected to Postgres
+  petclinic-postgres:
+    # Use the image built from the Dockerfile in the current directory
+    build: .
+    # Always restart the container if it stops
+    restart: always
+    # Map port 8082 on the host to port 8080 in the container
+    ports:
+      - "8082:8080"
+    # Environment variables to configure the app for PostgreSQL
+    environment:
+      # Activate the 'postgres' Spring profile
+      - SPRING_PROFILES_ACTIVE=postgres
+      # Set the JDBC URL to connect to the 'postgres-db' service
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/petclinic
+      # Database username
+      - SPRING_DATASOURCE_USERNAME=petclinic
+      # Database password
+      - SPRING_DATASOURCE_PASSWORD=petclinic
+    # This service depends on 'postgres-db' to be running first
+    depends_on:
+      - postgres-db
+
+  # The Petclinic application service with the default H2 in-memory database
+  petclinic-h2:
+    build: .
+    restart: always
+    ports:
+      - "8081:8080"
+
+  # The PostgreSQL database service
+  postgres-db:
+    # Use the official PostgreSQL image, updated to version 16
+    image: postgres:16
+    # Always restart the container if it stops
+    restart: always
+    # Environment variables to initialize the PostgreSQL container
+    environment:
+      # Set the default database name
+      - POSTGRES_DB=petclinic
+      # Set the database user
+      - POSTGRES_USER=petclinic
+      # Set the database password
+      - POSTGRES_PASSWORD=petclinic
+    # Map the named volume 'postgres-data' to the data directory inside the container
+    # This ensures that database data persists even if the container is removed
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+# Define the named volume for data persistence
+volumes:
+  postgres-data:
