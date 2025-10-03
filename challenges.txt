@@ -1,3 +1,7 @@
 -- was using ubuntu docker which doesn't run like normal docker. as a result, I was hitting so many permissions errors until I manually installed docker
 -- was using the snap version
 - couldn't copy and paste between my vm and host machine
+-- user not being able to run docker becuse it hasn't been added to the docker group which ha
+
+
+
