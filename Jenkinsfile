@@ -83,26 +83,26 @@ pipeline {
         }
 
         // --- TASK 4: DEPLOY TO KUBERNETES ---
-        // stage('Deploy to Kubernetes') {
-        //     // This stage uses the Kubernetes CLI plugin, which will
-        //     // automatically use the 'jenkins-admin' ServiceAccount.
-        //     steps {
-        //         echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
+        stage('Deploy to Kubernetes') {
+            // This stage uses the Kubernetes CLI plugin, which will
+            // automatically use the 'jenkins-admin' ServiceAccount.
+            steps {
+                echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
-        //         // 1. Update the image in our deployment manifest.
-        //         // This is a simple 'find-and-replace' on the file.
-        //         // It finds the line 'image: ...' and replaces it.
-        //         sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
+                // 1. Update the image in our deployment manifest.
+                // This is a simple 'find-and-replace' on the file.
+                // It finds the line 'image: ...' and replaces it.
+                sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
 
-        //         // 2. Apply the updated manifest to the cluster
-        //         sh "kubectl apply -f petclinic-frontend.yaml"
+                // 2. Apply the updated manifest to the cluster
+                sh "kubectl apply -f petclinic-frontend.yaml"
                 
-        //         // 3. Wait for the rollout to complete (for Task 5)
-        //         echo "Waiting for deployment to complete..."
-        //         sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
+                // 3. Wait for the rollout to complete (for Task 5)
+                echo "Waiting for deployment to complete..."
+                sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
                 
-        //         echo 'Deployment successful!'
-        //     }
-        // }
+                echo 'Deployment successful!'
+            }
+        }
     }
 }
