@@ -61,26 +61,26 @@ pipeline {
         }
 
         // --- TASK 3: BUILD & PUSH IMAGE ---
-        stage('Build & Push Image') {
-            // This stage MUST have access to a Docker daemon.
-            // (See the critical note below this file)
-            steps {
-                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        // stage('Build & Push Image') {
+        //     // This stage MUST have access to a Docker daemon.
+        //     // (See the critical note below this file)
+        //     steps {
+        //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-                // Use the Docker Pipeline plugin to log in to Docker Hub
-                docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+        //         // Use the Docker Pipeline plugin to log in to Docker Hub
+        //         docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                     
-                    // 1. Build the image
-                    // The 'docker.build' command needs the image name AND
-                    // the build context ('.' means the current directory)
-                    def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+        //             // 1. Build the image
+        //             // The 'docker.build' command needs the image name AND
+        //             // the build context ('.' means the current directory)
+        //             def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                     
-                    // 2. Push the image
-                    echo "Pushing image..."
-                    appImage.push()
-                }
-            }
-        }
+        //             // 2. Push the image
+        //             echo "Pushing image..."
+        //             appImage.push()
+        //         }
+        //     }
+        // }
 
         // --- TASK 4: DEPLOY TO KUBERNETES ---
         // stage('Deploy to Kubernetes') {
