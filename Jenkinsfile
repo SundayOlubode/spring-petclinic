@@ -27,6 +27,10 @@ pipeline {
         // --- TASK 3: CHECKOUT ---
         stage('Checkout') {
             steps {
+                echo 'This is a new line to force a build!'
+            }
+            
+            steps {
                 echo 'Checking out code from GitHub...'
                 // This automatically pulls the code from the repo
                 // you configured in the Jenkins job
@@ -60,49 +64,49 @@ pipeline {
             }
         }
 
-        // --- TASK 3: BUILD & PUSH IMAGE ---
-        // stage('Build & Push Image') {
-        //     // This stage MUST have access to a Docker daemon.
-        //     // (See the critical note below this file)
-        //     steps {
-        //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        --- TASK 3: BUILD & PUSH IMAGE ---
+        stage('Build & Push Image') {
+            // This stage MUST have access to a Docker daemon.
+            // (See the critical note below this file)
+            steps {
+                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-        //         // Use the Docker Pipeline plugin to log in to Docker Hub
-        //         docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                // Use the Docker Pipeline plugin to log in to Docker Hub
+                docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                     
-        //             // 1. Build the image
-        //             // The 'docker.build' command needs the image name AND
-        //             // the build context ('.' means the current directory)
-        //             def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+                    // 1. Build the image
+                    // The 'docker.build' command needs the image name AND
+                    // the build context ('.' means the current directory)
+                    def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                     
-        //             // 2. Push the image
-        //             echo "Pushing image..."
-        //             appImage.push()
-        //         }
-        //     }
-        // }
+                    // 2. Push the image
+                    echo "Pushing image..."
+                    appImage.push()
+                }
+            }
+        }
 
         // --- TASK 4: DEPLOY TO KUBERNETES ---
-        // stage('Deploy to Kubernetes') {
-        //     // This stage uses the Kubernetes CLI plugin, which will
-        //     // automatically use the 'jenkins-admin' ServiceAccount.
-        //     steps {
-        //         echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
+        stage('Deploy to Kubernetes') {
+            // This stage uses the Kubernetes CLI plugin, which will
+            // automatically use the 'jenkins-admin' ServiceAccount.
+            steps {
+                echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
-        //         // 1. Update the image in our deployment manifest.
-        //         // This is a simple 'find-and-replace' on the file.
-        //         // It finds the line 'image: ...' and replaces it.
-        //         sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
+                // 1. Update the image in our deployment manifest.
+                // This is a simple 'find-and-replace' on the file.
+                // It finds the line 'image: ...' and replaces it.
+                sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
 
-        //         // 2. Apply the updated manifest to the cluster
-        //         sh "kubectl apply -f petclinic-frontend.yaml"
+                // 2. Apply the updated manifest to the cluster
+                sh "kubectl apply -f petclinic-frontend.yaml"
                 
-        //         // 3. Wait for the rollout to complete (for Task 5)
-        //         echo "Waiting for deployment to complete..."
-        //         sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
+                // 3. Wait for the rollout to complete (for Task 5)
+                echo "Waiting for deployment to complete..."
+                sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
                 
-        //         echo 'Deployment successful!'
-        //     }
-        // }
+                echo 'Deployment successful!'
+            }
+        }
     }
 }
