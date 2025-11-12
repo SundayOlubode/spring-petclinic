@@ -21,13 +21,15 @@ pipeline {
         // --- 2. BUILD (Task 3) ---
         stage('Build') {
             // This stage runs inside a Maven container
-            // agent {
-            //     docker { image 'maven:3.8-openjdk-17' }
-            // }
+            agent {
+                // --- START CHANGE ---
+                // Use a Maven image that includes Java 25, as required by the error
+                docker { image 'maven:3-eclipse-temurin-25' }
+                // --- END CHANGE ---
+            }
             steps {
                 echo 'Building the project...'
                 
-                // --- THIS IS THE FIX ---
                 // Add execute permission to the Maven wrapper
                 sh 'chmod +x mvnw'
                 
@@ -39,13 +41,15 @@ pipeline {
         // --- 3. TEST (Task 3) ---
         stage('Test') {
             // This stage also runs inside a Maven container
-            // agent {
-            //     docker { image 'maven:3.8-openjdk-17' }
-            // }
+            agent {
+                // --- START CHANGE ---
+                // Use a Maven image that includes Java 25, as required by the error
+                docker { image 'maven:3-eclipse-temurin-25' }
+                // --- END CHANGE ---
+            }
             steps {
                 echo 'Running unit tests...'
                 
-                // --- THIS IS THE FIX ---
                 // We need to add permission again because this
                 // is a new agent with a fresh checkout.
                 sh 'chmod +x mvnw'
@@ -63,20 +67,21 @@ pipeline {
         }
 
         // --- 5. BUILD & PUSH IMAGE (Task 3) ---
-        // stage('Build & Push Image') {
-        //     steps {
-        //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        stage('Build & Push Image') {
+            steps {
+                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-        //         docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                     
-        //             // Build the image from the Dockerfile in our repo
-        //             def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+                    // Build the image from the Dockerfile in our repo
+                    def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                     
-        //             echo "Pushing image..."
-        //             appImage.push()
-        //         }
-        //     }
-        // }
+                    echo "Pushing image..."
+                    appImage.push()
+                }
+            }
+
+        }
 
         // --- 6. DEPLOY TO KUBERNETES (Task 4) ---
         stage('Deploy to Kubernetes') {
