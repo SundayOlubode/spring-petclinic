@@ -61,24 +61,24 @@ pipeline {
         }
 
         // --- 5. BUILD & PUSH IMAGE (Task 3) ---
-        // stage('Build & Push Image') {
-        //     // This stage runs on 'agent any', which is fine
-        //     // because your 'jenkins/docker:lts' image already has the Docker client.
-        //     steps {
-        //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        stage('Build & Push Image') {
+            // This stage runs on 'agent any', which is fine
+            // because your 'jenkins/docker:lts' image already has the Docker client.
+            steps {
+                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-        //         script {
-        //             docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                         
-        //                 // Build the image from the Dockerfile in our repo
-        //                 def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+                        // Build the image from the Dockerfile in our repo
+                        def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                         
-        //                 echo "Pushing image..."
-        //                 appImage.push()
-        //             }
-        //         }
-        //     }
-        // }
+                        echo "Pushing image..."
+                        appImage.push()
+                    }
+                }
+            }
+        }
 
         // --- 6. DEPLOY TO KUBERNETES (Task 4) ---
         stage('Deploy to Kubernetes') {
