@@ -93,7 +93,8 @@ pipeline {
                 sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
 
                 // Apply the updated manifest
-                sh "kubectl apply -f petclinic-frontend.yaml"
+                sh "kubectl apply -f ./k8s/postgres-backend.yaml"
+                sh "kubectl apply -f ./k8s/petclinic-frontend.yaml"
                 
                 echo "Waiting for deployment to complete..."
                 sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"

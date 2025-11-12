@@ -1,0 +1,67 @@
+# Stores non-sensitive configuration data.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: petclinic-config
+data:
+  SPRING_PROFILES_ACTIVE: "postgres"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-db:5432/petclinic"
+
+---
+# Runs your Spring Petclinic application container.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petclinic-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: petclinic
+  template:
+    metadata:
+      labels:
+        app: petclinic
+    spec:
+      containers:
+        - name: petclinic
+          image: samolubode/petclinic:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080 
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: petclinic-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: petclinic-config
+                  key: SPRING_DATASOURCE_URL
+            
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials 
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials 
+                  key: POSTGRES_PASSWORD
+
+---
+# Exposes your application to the outside world.
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: petclinic 
