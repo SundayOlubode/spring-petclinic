@@ -90,7 +90,7 @@ pipeline {
                 
                 // Find the 'image:' line in our manifest and replace it
                 // with our new, unique image tag
-                sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
+                sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' ./k8s/petclinic-frontend.yaml"
 
                 // Apply the updated manifest
                 sh "kubectl apply -f ./k8s/postgres-backend.yaml"
