@@ -27,10 +27,11 @@ pipeline {
                 echo 'Building the project...'
                 
                 // Add execute permission to the Maven wrapper
-                sh 'chmod +x mvnw'
+                // sh 'chmod +x mvnw'
                 
                 // Now, run the build command
-                sh './mvnw clean install -DskipTests'
+                // sh './mvnw clean install -DskipTests'
+                sh 'mvn clean install -DskipTests'
             }
         }
 
@@ -44,10 +45,11 @@ pipeline {
                 
                 // We need to add permission again because this
                 // is a new agent with a fresh checkout.
-                sh 'chmod +x mvnw'
+                // sh 'chmod +x mvnw'
 
                 // Now, run the test command
-                sh './mvnw test'
+                // sh './mvnw test'
+                sh 'mvn test'
             }
         }
 
