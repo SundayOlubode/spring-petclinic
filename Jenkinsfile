@@ -2,7 +2,7 @@ pipeline {
     agent any // All stages will run on the main Jenkins pod
 
     environment {
-        DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
+        DOCKERHUB_CREDENTIALS_ID = 'dockerhub'
         IMAGE_NAME               = 'samolubode/petclinic' 
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
         KUBERNETES_NAMESPACE     = 'default'
