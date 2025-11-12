@@ -1,113 +1,100 @@
 pipeline {
-    // This pipeline will run on the main Jenkins pod
     agent any
 
     environment {
-        // --- CONFIGURATION ---
-        // The ID you gave your Docker Hub credentials in Jenkins
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
-        
-        // Your Docker Hub username + repository name
-        // (e.g., 'samolubode/petclinic')
-        IMAGE_NAME = 'samolubode/petclinic' 
-
-        // The name of your Petclinic deployment in Kubernetes
-        KUBERNETES_DEPLOYMENT = 'petclinic-deployment'
-        
-        // The namespace your Petclinic app is in
-        // (You used 'default' in our previous chat)
-        KUBERNETES_NAMESPACE  = 'default'
-        // --- END CONFIGURATION ---
-
-        // This tag will be unique for every build (e.g., "v1", "v2", etc.)
-        IMAGE_TAG = "v${env.BUILD_ID}"
+        IMAGE_NAME               = 'samolubode/petclinic' 
+        KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
+        KUBERNETES_NAMESPACE     = 'default'
+        IMAGE_TAG                = "v${env.BUILD_ID}"
     }
 
     stages {
-        // --- TASK 3: CHECKOUT ---
+        // --- 1. CHECKOUT (Task 3) ---
         stage('Checkout') {
             steps {
-                echo 'This is a new line to force a build!'
                 echo 'Checking out code from GitHub...'
                 checkout scm
             }
         }
 
-        stage('Build Project'){
+        // --- 2. BUILD (Task 3) ---
+        stage('Build') {
+            // This stage runs inside a Maven container
+            // agent {
+            //     docker { image 'maven:3.8-openjdk-17' }
+            // }
             steps {
+                echo 'Building the project...'
+                
+                // --- THIS IS THE FIX ---
+                // Add execute permission to the Maven wrapper
+                sh 'chmod +x mvnw'
+                
+                // Now, run the build command
                 sh './mvnw clean install -DskipTests'
             }
         }
 
-        // --- TASK 3: TEST ---
+        // --- 3. TEST (Task 3) ---
         stage('Test') {
-            // This stage runs inside a separate container that
-            // has Maven and Java 17 installed.
-            agent {
-                docker {
-                    image 'maven:3.8-openjdk-17' 
-                }
-            }
+            // This stage also runs inside a Maven container
+            // agent {
+            //     docker { image 'maven:3.8-openjdk-17' }
+            // }
             steps {
                 echo 'Running unit tests...'
-                // This assumes your project has the Maven wrapper (mvnw)
-                // If not, you can just use: sh 'mvn test'
+                
+                // --- THIS IS THE FIX ---
+                // We need to add permission again because this
+                // is a new agent with a fresh checkout.
+                sh 'chmod +x mvnw'
+
+                // Now, run the test command
                 sh './mvnw test'
             }
         }
 
-        // --- TASK 3: STATIC ANALYSIS (PLACEHOLDER) ---
+        // --- 4. STATIC ANALYSIS (Task 3 Placeholder) ---
         stage('Static Analysis (SonarQube)') {
-            // This is a placeholder as required by the lab sheet.
-            // A real setup would require a SonarQube server.
             steps {
                 echo 'SonarQube stage: Not configured. Skipping.'
             }
         }
 
-        // --- TASK 3: BUILD & PUSH IMAGE ---
+        // --- 5. BUILD & PUSH IMAGE (Task 3) ---
         // stage('Build & Push Image') {
-        //     // This stage MUST have access to a Docker daemon.
-        //     // (See the critical note below this file)
         //     steps {
         //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-        //         // Use the Docker Pipeline plugin to log in to Docker Hub
         //         docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                     
-        //             // 1. Build the image
-        //             // The 'docker.build' command needs the image name AND
-        //             // the build context ('.' means the current directory)
+        //             // Build the image from the Dockerfile in our repo
         //             def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                     
-        //             // 2. Push the image
         //             echo "Pushing image..."
         //             appImage.push()
         //         }
         //     }
         // }
 
-        // // --- TASK 4: DEPLOY TO KUBERNETES ---
-        // stage('Deploy to Kubernetes') {
-        //     // This stage uses the Kubernetes CLI plugin, which will
-        //     // automatically use the 'jenkins-admin' ServiceAccount.
-        //     steps {
-        //         echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
+        // --- 6. DEPLOY TO KUBERNETES (Task 4) ---
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
-        //         // 1. Update the image in our deployment manifest.
-        //         // This is a simple 'find-and-replace' on the file.
-        //         // It finds the line 'image: ...' and replaces it.
-        //         sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
+                // Find the 'image:' line in our manifest and replace it
+                // with our new, unique image tag
+                sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' petclinic-frontend.yaml"
 
-        //         // 2. Apply the updated manifest to the cluster
-        //         sh "kubectl apply -f petclinic-frontend.yaml"
+                // Apply the updated manifest
+                sh "kubectl apply -f petclinic-frontend.yaml"
                 
-        //         // 3. Wait for the rollout to complete (for Task 5)
-        //         echo "Waiting for deployment to complete..."
-        //         sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
+                echo "Waiting for deployment to complete..."
+                sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
                 
-        //         echo 'Deployment successful!'
-        //     }
-        // }
+                echo 'Deployment successful!'
+            }
+        }
     }
 }
