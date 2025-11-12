@@ -28,13 +28,14 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'This is a new line to force a build!'
-            }
-            
-            steps {
                 echo 'Checking out code from GitHub...'
-                // This automatically pulls the code from the repo
-                // you configured in the Jenkins job
                 checkout scm
+            }
+        }
+
+        stage('Build Project'){
+            steps {
+                sh 'mvn clean install -DskipTests'
             }
         }
 
