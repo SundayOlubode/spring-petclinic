@@ -20,36 +20,36 @@ pipeline {
 
         // --- 2. BUILD (Task 3) ---
         stage('Build') {
-            // agent {
-            //     docker { image 'maven:3-eclipse-temurin-25' }
-            // }
+            agent {
+                docker { image 'maven:3-eclipse-temurin-25' }
+            }
             steps {
                 echo 'Building the project...'
                 
                 // Add execute permission to the Maven wrapper
-                sh 'chmod +x mvnw'
+                // sh 'chmod +x mvnw'
                 
                 // Now, run the build command
-                sh './mvnw clean install -DskipTests'
-                // sh 'mvn clean install -DskipTests'
+                // sh './mvnw clean install -DskipTests'
+                sh 'mvn clean install -DskipTests'
             }
         }
 
         // --- 3. TEST (Task 3) ---
         stage('Test') {
-            // agent {
-            //     docker { image 'maven:3-eclipse-temurin-25' }
-            // }
+            agent {
+                docker { image 'maven:3-eclipse-temurin-25' }
+            }
             steps {
                 echo 'Running unit tests...'
                 
                 // We need to add permission again because this
                 // is a new agent with a fresh checkout.
-                sh 'chmod +x mvnw'
+                // sh 'chmod +x mvnw'
 
                 // Now, run the test command
-                sh './mvnw test'
-                // sh 'mvn test'
+                // sh './mvnw test'
+                sh 'mvn test'
             }
         }
 
