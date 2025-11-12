@@ -20,9 +20,9 @@ pipeline {
 
         // --- 2. BUILD (Task 3) ---
         stage('Build') {
-            agent {
-                docker { image 'maven:3-eclipse-temurin-25' }
-            }
+            // agent {
+            //     docker { image 'maven:3-eclipse-temurin-25' }
+            // }
             steps {
                 echo 'Building the project...'
                 
