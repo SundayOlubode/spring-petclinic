@@ -20,12 +20,8 @@ pipeline {
 
         // --- 2. BUILD (Task 3) ---
         stage('Build') {
-            // This stage runs inside a Maven container
             agent {
-                // --- START CHANGE ---
-                // Use a Maven image that includes Java 25, as required by the error
                 docker { image 'maven:3-eclipse-temurin-25' }
-                // --- END CHANGE ---
             }
             steps {
                 echo 'Building the project...'
@@ -40,12 +36,8 @@ pipeline {
 
         // --- 3. TEST (Task 3) ---
         stage('Test') {
-            // This stage also runs inside a Maven container
             agent {
-                // --- START CHANGE ---
-                // Use a Maven image that includes Java 25, as required by the error
                 docker { image 'maven:3-eclipse-temurin-25' }
-                // --- END CHANGE ---
             }
             steps {
                 echo 'Running unit tests...'
@@ -71,16 +63,17 @@ pipeline {
             steps {
                 echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-                docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
-                    
-                    // Build the image from the Dockerfile in our repo
-                    def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
-                    
-                    echo "Pushing image..."
-                    appImage.push()
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                        
+                        // Build the image from the Dockerfile in our repo
+                        def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+                        
+                        echo "Pushing image..."
+                        appImage.push()
+                    }
                 }
             }
-
         }
 
         // --- 6. DEPLOY TO KUBERNETES (Task 4) ---
