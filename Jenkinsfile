@@ -67,7 +67,7 @@ kind: Pod
 spec:
   containers:
   - name: kubectl
-    image: bitnami/kubectl:1.31-debian-12
+    image: alpine/k8s:1.31.13
     command:
     - cat
     tty: true
