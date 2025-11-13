@@ -92,7 +92,7 @@ kind: Pod
 spec:
   containers:
   - name: kubectl
-    image: alpine/k8s
+    image: alpine/k8s:1.31.13
     command:
     - cat
     tty: true
