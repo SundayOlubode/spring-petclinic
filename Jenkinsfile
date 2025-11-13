@@ -107,16 +107,17 @@ pipeline {
                         // Find the 'image:' line in our manifest and replace it
                         // with our new, unique image tag.
                         // Note: Your petclinic-frontend.yaml is in a 'k8s' folder
-                        sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/petclinic-frontend.yaml"
+                        // sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/petclinic-frontend.yaml"
 
-                        // Apply the updated manifest
-                        sh "kubectl apply -f k8s/postgres-backend.yaml"
-                        sh "kubectl apply -f k8s/petclinic-frontend.yaml"
+                        // // Apply the updated manifest
+                        // sh "kubectl apply -f k8s/postgres-backend.yaml"
+                        // sh "kubectl apply -f k8s/petclinic-frontend.yaml"
                         
-                        echo "Waiting for deployment to complete..."
-                        sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
+                        // echo "Waiting for deployment to complete..."
+                        // sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
                         
-                        echo 'Deployment successful!'
+                        // echo 'Deployment successful!'
+                        sh 'kubectl get pods -n devops-tools'
                     }
                 }
             }
