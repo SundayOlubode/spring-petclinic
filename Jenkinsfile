@@ -6,6 +6,8 @@ pipeline {
         IMAGE_NAME               = 'samolubode/petclinic' 
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
         KUBERNETES_NAMESPACE     = 'default'
+        K8S_JENKIN_ID            = 'kubectl-jenkins-token'
+        SERVER_URL               = 'https://192.168.56.10:6443'
         IMAGE_TAG                = "v${env.BUILD_ID}" 
     }
 
@@ -87,7 +89,7 @@ pipeline {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
     
-                withKubeConfig {
+                withKubeConfig([credentialsId: K8S_JENKIN_ID, serverUrl: SERVER_URL]) {
                     // Find the 'image:' line in our manifest and replace it
                     // with our new, unique image tag.
                     // Note: Your petclinic-frontend.yaml is in a 'k8s' folder
