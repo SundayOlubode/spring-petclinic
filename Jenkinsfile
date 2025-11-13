@@ -18,7 +18,6 @@ pipeline {
     tools {
         maven 'Maven-3.9.8'
         jdk 'JDK-25'
-        kubectl 'kubectl-latest'
     }
     // --- END FIX ---
 
