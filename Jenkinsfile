@@ -23,64 +23,64 @@ pipeline {
 
     stages {
         // --- 1. CHECKOUT (Task 3) ---
-        stage('Checkout') {
-            steps {
-                echo 'Checking out code from GitHub...'
-                checkout scm
-            }
-        }
+        // stage('Checkout') {
+        //     steps {
+        //         echo 'Checking out code from GitHub...'
+        //         checkout scm
+        //     }
+        // }
 
-        // --- 2. BUILD (Task 3) ---
-        stage('Build') {
-            steps {
-                echo 'Building the project...'
+        // // --- 2. BUILD (Task 3) ---
+        // stage('Build') {
+        //     steps {
+        //         echo 'Building the project...'
                 
-                // Add execute permission to the Maven wrapper
-                sh 'chmod +x mvnw'
+        //         // Add execute permission to the Maven wrapper
+        //         sh 'chmod +x mvnw'
                 
-                // Run the build command. 
-                // The './mvnw' script will now find the correct JDK
-                // (from the 'tools' block) in its PATH.
-                sh './mvnw clean install -DskipTests'
-            }
-        }
+        //         // Run the build command. 
+        //         // The './mvnw' script will now find the correct JDK
+        //         // (from the 'tools' block) in its PATH.
+        //         sh './mvnw clean install -DskipTests'
+        //     }
+        // }
 
-        // --- 3. TEST (Task 3) ---
-        stage('Test') {
-            steps {
-                echo 'Running unit tests...'
+        // // --- 3. TEST (Task 3) ---
+        // stage('Test') {
+        //     steps {
+        //         echo 'Running unit tests...'
                 
-                sh 'chmod +x mvnw'
-                sh './mvnw test'
-            }
-        }
+        //         sh 'chmod +x mvnw'
+        //         sh './mvnw test'
+        //     }
+        // }
 
-        // --- 4. STATIC ANALYSIS (Task 3 Placeholder) ---
-        stage('Static Analysis (SonarQube)') {
-            steps {
-                echo 'SonarQube stage: Not configured. Skipping.'
-            }
-        }
+        // // --- 4. STATIC ANALYSIS (Task 3 Placeholder) ---
+        // stage('Static Analysis (SonarQube)') {
+        //     steps {
+        //         echo 'SonarQube stage: Not configured. Skipping.'
+        //     }
+        // }
 
-        // --- 5. BUILD & PUSH IMAGE (Task 3) ---
-        stage('Build & Push Image') {
-            // This stage runs on 'agent any', which is fine
-            // because your 'jenkins/docker:lts' image already has the Docker client.
-            steps {
-                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        // // --- 5. BUILD & PUSH IMAGE (Task 3) ---
+        // stage('Build & Push Image') {
+        //     // This stage runs on 'agent any', which is fine
+        //     // because your 'jenkins/docker:lts' image already has the Docker client.
+        //     steps {
+        //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                         
-                        // Build the image from the Dockerfile in our repo
-                        def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+        //                 // Build the image from the Dockerfile in our repo
+        //                 def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                         
-                        echo "Pushing image..."
-                        appImage.push()
-                    }
-                }
-            }
-        }
+        //                 echo "Pushing image..."
+        //                 appImage.push()
+        //             }
+        //         }
+        //     }
+        // }
 
         // --- 6. DEPLOY TO KUBERNETES
         stage('Deploy to Kubernetes') {
@@ -88,7 +88,7 @@ pipeline {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
     
-                withKubeConfig([credentialsId: K8S_JENKIN_ID, serverUrl: SERVER_URL]) {
+                withKubeConfig([credentialsId: K8S_JENKIN_ID, serverUrl: SERVER_URL, namespace: "devops-tools"]) {
                     // Find the 'image:' line in our manifest and replace it
                     // with our new, unique image tag.
                     // Note: Your petclinic-frontend.yaml is in a 'k8s' folder
