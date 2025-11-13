@@ -13,7 +13,7 @@ pipeline {
     }
 
     environment {
-        DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
+        DOCKERHUB_CREDENTIALS_ID = 'docker'
         IMAGE_NAME               = 'samolubode/petclinic' 
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
         KUBERNETES_NAMESPACE     = 'devops-tools'
