@@ -1,3 +1,9 @@
+# This file contains all resources for the PostgreSQL database
+# Lab 5 - Kubernetes Deployment with PostgreSQL
+
+# --- 1. The Secret ---
+# Stores the database credentials securely.
+# Base64 encoding: echo -n "petclinic" | base64
 apiVersion: v1
 kind: Secret
 metadata:
@@ -6,11 +12,14 @@ metadata:
     app: postgres
 type: Opaque
 data:
+  # All values are 'petclinic' base64 encoded
   POSTGRES_DB: cGV0Y2xpbmlj
   POSTGRES_USER: cGV0Y2xpbmlj
   POSTGRES_PASSWORD: cGV0Y2xpbmlj
 
 ---
+# --- 2. The Persistent Volume Claim ---
+# Requests 1GB of storage from the cluster for our database.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -18,13 +27,22 @@ metadata:
   labels:
     app: postgres
 spec:
+  # --- THIS IS THE FIX ---
+  # Tell the PVC to use our 'local-storage' StorageClass
+  storageClassName: local-storage
+  # --- END FIX ---
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce # This volume can be mounted by one node at a time
   resources:
     requests:
       storage: 1Gi
+  # Note: storageClassName will use the cluster's default if not specified
 
 ---
+# --- 3. The Service ---
+# Creates a stable network name for our database.
+# CRITICAL: Named 'postgres-db' to match Petclinic's JDBC URL
+# jdbc:postgresql://postgres-db:5432/petclinic
 apiVersion: v1
 kind: Service
 metadata:
@@ -32,7 +50,7 @@ metadata:
   labels:
     app: postgres
 spec:
-  type: ClusterIP 
+  type: ClusterIP # Only reachable inside the cluster
   ports:
     - port: 5432
       targetPort: 5432
@@ -42,6 +60,7 @@ spec:
     app: postgres 
 
 ---
+# --- 4. The Deployment ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -68,12 +87,15 @@ spec:
             - containerPort: 5432
               name: postgres
           envFrom:
+            # Loads all key-value pairs from the Secret as environment variables
             - secretRef:
                 name: postgres-credentials
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
+              # SubPath prevents postgres from using the mount point root
               subPath: postgres
+          # Health checks to ensure database is ready
           livenessProbe:
             exec:
               command:

@@ -23,64 +23,64 @@ pipeline {
 
     stages {
         // --- 1. CHECKOUT ---
-        // stage('Checkout') {
-        //     steps {
-        //         echo 'Checking out code from GitHub...'
-        //         checkout scm
-        //     }
-        // }
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout scm
+            }
+        }
 
         // // --- 2. BUILD ---
-        // stage('Build') {
-        //     steps {
-        //         echo 'Building the project...'
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
                 
-        //         // Add execute permission to the Maven wrapper
-        //         sh 'chmod +x mvnw'
+                // Add execute permission to the Maven wrapper
+                sh 'chmod +x mvnw'
                 
-        //         // Run the build. This will use the JDK and Maven
-        //         // that the 'tools' block provided.
-        //         sh './mvnw clean install -DskipTests'
-        //     }
-        // }
+                // Run the build. This will use the JDK and Maven
+                // that the 'tools' block provided.
+                sh './mvnw clean install -DskipTests'
+            }
+        }
 
         // // --- 3. TEST ---
-        // stage('Test') {
-        //     steps {
-        //         echo 'Running unit tests...'
-        //         // We need permission again
-        //         sh 'chmod +x mvnw'
-        //         sh './mvnw test'
-        //     }
-        // }
+        stage('Test') {
+            steps {
+                echo 'Running unit tests...'
+                // We need permission again
+                sh 'chmod +x mvnw'
+                sh './mvnw test'
+            }
+        }
 
-        // // --- 4. STATIC ANALYSIS (Placeholder) ---
-        // stage('Static Analysis (SonarQube)') {
-        //     steps {
-        //         echo 'SonarQube stage: Not configured. Skipping.'
-        //     }
-        // }
+        // --- 4. STATIC ANALYSIS (Placeholder) ---
+        stage('Static Analysis (SonarQube)') {
+            steps {
+                echo 'SonarQube stage: Not configured. Skipping.'
+            }
+        }
 
         // --- 5. BUILD & PUSH IMAGE ---
-        // stage('Build & Push Image') {
-        //     steps {
-        //         echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        stage('Build & Push Image') {
+            steps {
+                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
                 
-        //         // This 'script' block is still needed for Groovy code
-        //         script {
-        //             // This command will work now because our custom
-        //             // image has the 'docker' client installed.
-        //             docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                // This 'script' block is still needed for Groovy code
+                script {
+                    // This command will work now because our custom
+                    // image has the 'docker' client installed.
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                         
-        //                 // Build the image from the Dockerfile in our repo
-        //                 def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
+                        // Build the image from the Dockerfile in our repo
+                        def appImage = docker.build(IMAGE_NAME, "--tag ${IMAGE_NAME}:${IMAGE_TAG} .")
                         
-        //                 echo "Pushing image..."
-        //                 appImage.push()
-        //             }
-        //         }
-        //     }
-        // }
+                        echo "Pushing image..."
+                        appImage.push()
+                    }
+                }
+            }
+        }
 
         // --- 6. DEPLOY TO KUBERNETES ---
         stage('Deploy to Kubernetes') {
