@@ -16,7 +16,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
         IMAGE_NAME               = 'samolubode/petclinic' 
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
-        KUBERNETES_NAMESPACE     = 'default'
+        KUBERNETES_NAMESPACE     = 'devops-tools'
         // Create a unique image tag for every build
         IMAGE_TAG                = "v${env.BUILD_ID}"
     }
