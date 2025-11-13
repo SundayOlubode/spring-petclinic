@@ -86,7 +86,7 @@ pipeline {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
     
-                withKubeconfig {
+                withKubeConfig {
                     // Find the 'image:' line in our manifest and replace it
                     // with our new, unique image tag.
                     // Note: Your petclinic-frontend.yaml is in a 'k8s' folder
