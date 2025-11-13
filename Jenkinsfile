@@ -1,5 +1,19 @@
 pipeline {
-    agent any // All stages will run on the main Jenkins pod
+    agent {
+        kubernetes {
+            yaml """
+            apiVersion: v1
+            kind: Pod
+            spec:
+                containers:
+                - name: kubectl
+                    image: bitnami/kubectl:latest
+                    command:
+                    - cat
+                    tty: true
+            """
+        }    
+    } // All stages will run on the main Jenkins pod
 
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub'
