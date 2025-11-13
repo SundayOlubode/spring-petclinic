@@ -1,5 +1,5 @@
 pipeline {
-    agent { any } // All stages will run on the main Jenkins pod
+    agent none // All stages will run on the main Jenkins pod
 
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub'
