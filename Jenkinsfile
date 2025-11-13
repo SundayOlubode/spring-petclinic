@@ -1,19 +1,5 @@
 pipeline {
-    agent {
-        kubernetes {
-            yaml """
-            apiVersion: v1
-            kind: Pod
-            spec:
-                containers:
-                - name: kubectl
-                    image: bitnami/kubectl:latest
-                    command:
-                    - cat
-                    tty: true
-            """
-        }    
-    } // All stages will run on the main Jenkins pod
+    agent { any } // All stages will run on the main Jenkins pod
 
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub'
@@ -98,6 +84,20 @@ pipeline {
 
         // --- 6. DEPLOY TO KUBERNETES
         stage('Deploy to Kubernetes') {
+            agent {
+                kubernetes {
+                yaml """
+                apiVersion: v1
+                kind: Pod
+                spec:
+                    containers:
+                    - name: kubectl
+                    image: bitnami/kubectl:latest
+                    command: ["cat"]
+                    tty: true
+                """
+                }
+            }            
             steps {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
                 
