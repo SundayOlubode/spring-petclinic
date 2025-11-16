@@ -39,6 +39,7 @@ pipeline {
         // the correct JDK and Maven from the 'tools' block.
         stage('Build') {
             steps {
+                sh 'node -v'
                 echo 'Building the project...'
 
                 // Add execute permission to the Maven wrapper
