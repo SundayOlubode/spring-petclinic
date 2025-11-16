@@ -71,7 +71,7 @@ pipeline {
                 withSonarQubeEnv('sonarserver') {
                     sh """
                         ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=spring-petclinic \
+                        -Dsonar.projectKey=SundayOlubode_spring-petclinic \
                         -Dsonar.organization=samolubode \
                         -Dsonar.host.url=https://sonarcloud.io \
                         -Dsonar.projectName=spring-petclinic \
