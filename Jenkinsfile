@@ -69,15 +69,18 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonarserver') {
-                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=jenkinsAssVI \
-                        -Dsonar.projectName=jenkinsAssVI \
+                    sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=spring-petclinic \
+                        -Dsonar.organization=samolubode \
+                        -Dsonar.host.url=https://sonarcloud.io \
+                        -Dsonar.projectName=spring-petclinic \
                         -Dsonar.projectVersion=1.0 \
                         -Dsonar.sources=src/ \
-                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.java.binaries=target/classes/ \
                         -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
-                    '''
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec
+                    """
                 }
             }
         }
