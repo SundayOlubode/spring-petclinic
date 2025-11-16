@@ -1,10 +1,7 @@
 pipeline {
-    // This pipeline will run on the main Jenkins pod ('agent any').
-    // This pod (from jenkins-03-deployment.yaml) runs our custom
-    // samolubode/jenkins-k8s:latest image, which has docker + kubectl.
     agent any
 
-    // Use the Tools you configured in "Manage Jenkins > Tools"
+    // Tools
     tools {
         jdk 'JDK-25'
         maven 'Maven-3.9.8'
@@ -12,29 +9,26 @@ pipeline {
     }
 
     environment {
-        // Make sure this ID matches what you created in
-        // Manage Jenkins > Credentials
         DOCKERHUB_CREDENTIALS_ID = 'docker'
         IMAGE_NAME               = 'samolubode/petclinic'
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
-        // Make sure this matches your pod's namespace
         KUBERNETES_NAMESPACE     = 'devops-tools'
-        // Create a unique image tag for every build
+        // Unique image tag for every build
         IMAGE_TAG                = "v${env.BUILD_ID}"
     }
 
     stages {
-        // --- 1. CHECKOUT ---
+        // CHECKOUT
         stage('Checkout') {
             steps {
                 echo 'Checking out code from GitHub...'
                 // This automatically pulls the code from the repo
-                // you configured in the Jenkins job
+                // configured in the Jenkins job
                 checkout scm
             }
         }
 
-        // --- 2. BUILD ---
+        // BUILD
         // This stage runs on the main agent, which now has
         // the correct JDK and Maven from the 'tools' block.
         stage('Build') {
@@ -46,23 +40,22 @@ pipeline {
                 sh 'chmod +x mvnw'
 
                 // Run the build. This will use the JDK and Maven
-                // that the 'tools' block provided.
+                // that the 'tools' block provides.
                 sh './mvnw clean install -DskipTests'
             }
         }
 
-        // --- 3. TEST ---
+        // TEST
         stage('Test') {
             steps {
                 echo 'Running unit tests...'
-                // We need permission again
                 sh 'chmod +x mvnw'
                 // This will use the JDK and Maven from the 'tools' block
                 sh './mvnw test'
             }
         }
 
-        // --- 4. STATIC ANALYSIS (Placeholder) ---
+        // STATIC ANALYSIS
         stage('Sonar Code Analysis') {
             environment {
                 scannerHome = tool 'Sonar7.3'
@@ -85,46 +78,37 @@ pipeline {
             }
         }
 
-        // --- 5. BUILD & PUSH IMAGE ---
-        // This stage works because our 'agent any' pod
-        // (from samolubode/jenkins-k8s:latest) has the 'docker' client.
+        // BUILD & PUSH IMAGE
         stage('Build & Push Image') {
             steps {
                 echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
 
-                // This 'script' block is needed for Groovy code
                 script {
                     // Log in to Docker Hub using the credential ID
                     docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
                         // Build the image and give it the unique tag
                         def appImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", '.')
 
-                        // --- THIS IS THE FIX ---
-                        // 1. Push the unique tag (e.g., v38)
+                        // Push the unique tag (e.g., v38)
                         echo "Pushing image: ${IMAGE_NAME}:${IMAGE_TAG}"
                         appImage.push()
 
-                        // 2. Also update the 'latest' tag (good practice)
+                        // Also update the 'latest' tag
                         echo "Pushing image: ${IMAGE_NAME}:latest"
                         appImage.push('latest')
-                    // --- END FIX ---
                     }
                 }
             }
         }
 
-        // --- 6. DEPLOY TO KUBERNETES ---
-        // This stage works because our 'agent any' pod
-        // (from samolubode/jenkins-k8s:latest) has the 'kubectl' client.
+        // DEPLOY TO KUBERNETES
         stage('Deploy to Kubernetes') {
             steps {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
 
-                // Use withKubeConfig (note the capital 'C') to
-                // automatically find and use the pod's
+                // Use withKubeConfig - automatically find and use the pod's
                 // 'jenkins-admin' ServiceAccount token.
                 withKubeConfig {
-                    // Make sure your YAML files are in a 'k8s/' subfolder
                     // This command updates the image tag in the file
                     sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/petclinic-frontend.yaml"
 
