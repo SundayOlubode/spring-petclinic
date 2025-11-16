@@ -15,11 +15,11 @@ pipeline {
     environment {
         // Make sure this ID matches what you created in
         // Manage Jenkins > Credentials
-        DOCKERHUB_CREDENTIALS_ID = 'docker' 
-        IMAGE_NAME               = 'samolubode/petclinic' 
+        DOCKERHUB_CREDENTIALS_ID = 'docker'
+        IMAGE_NAME               = 'samolubode/petclinic'
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
         // Make sure this matches your pod's namespace
-        KUBERNETES_NAMESPACE     = 'devops-tools' 
+        KUBERNETES_NAMESPACE     = 'devops-tools'
         // Create a unique image tag for every build
         IMAGE_TAG                = "v${env.BUILD_ID}"
     }
@@ -41,10 +41,10 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                
+
                 // Add execute permission to the Maven wrapper
                 sh 'chmod +x mvnw'
-                
+
                 // Run the build. This will use the JDK and Maven
                 // that the 'tools' block provided.
                 sh './mvnw clean install -DskipTests'
@@ -63,9 +63,22 @@ pipeline {
         }
 
         // --- 4. STATIC ANALYSIS (Placeholder) ---
-        stage('Static Analysis (SonarQube)') {
+        stage('Sonar Code Analysis') {
+            environment {
+                scannerHome = tool 'Sonar7.3'
+            }
             steps {
-                echo 'SonarQube stage: Not configured. Skipping.'
+                withSonarQubeEnv('sonarserver') {
+                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=jenkinsAssVI \
+                        -Dsonar.projectName=jenkinsAssVI \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+                    '''
+                }
             }
         }
 
@@ -75,15 +88,14 @@ pipeline {
         stage('Build & Push Image') {
             steps {
                 echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                
+
                 // This 'script' block is needed for Groovy code
                 script {
                     // Log in to Docker Hub using the credential ID
                     docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
-                        
                         // Build the image and give it the unique tag
-                        def appImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", ".")
-                        
+                        def appImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", '.')
+
                         // --- THIS IS THE FIX ---
                         // 1. Push the unique tag (e.g., v38)
                         echo "Pushing image: ${IMAGE_NAME}:${IMAGE_TAG}"
@@ -91,8 +103,8 @@ pipeline {
 
                         // 2. Also update the 'latest' tag (good practice)
                         echo "Pushing image: ${IMAGE_NAME}:latest"
-                        appImage.push("latest")
-                        // --- END FIX ---
+                        appImage.push('latest')
+                    // --- END FIX ---
                     }
                 }
             }
@@ -104,26 +116,25 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
-                
-                // Use withKubeConfig (note the capital 'C') to 
-                // automatically find and use the pod's 
+
+                // Use withKubeConfig (note the capital 'C') to
+                // automatically find and use the pod's
                 // 'jenkins-admin' ServiceAccount token.
                 withKubeConfig {
-                    
                     // Make sure your YAML files are in a 'k8s/' subfolder
                     // This command updates the image tag in the file
                     sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/petclinic-frontend.yaml"
 
                     // Apply the backend (in case it's not there)
-                    sh "kubectl apply -f k8s/postgres-backend.yaml"
+                    sh 'kubectl apply -f k8s/postgres-backend.yaml'
 
                     // Apply the updated frontend
-                    sh "kubectl apply -f k8s/petclinic-frontend.yaml"
-                    
-                    echo "Waiting for deployment to complete..."
+                    sh 'kubectl apply -f k8s/petclinic-frontend.yaml'
+
+                    echo 'Waiting for deployment to complete...'
                     // Wait for the new pods to become 'Ready'
                     sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
-                    
+
                     echo 'Deployment successful!'
                 }
             }
