@@ -6,10 +6,9 @@ pipeline {
 
     // Use the Tools you configured in "Manage Jenkins > Tools"
     tools {
-        // This will install JDK 25 on-the-fly
         jdk 'JDK-25'
-        // This will install Maven 3.9.8 on-the-fly
         maven 'Maven-3.9.8'
+        node 'NodeJS-20'
     }
 
     environment {
