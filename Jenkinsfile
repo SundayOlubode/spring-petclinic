@@ -1,10 +1,21 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            // This must be a custom "fat" image you have built
+            // that contains: JDK, Maven, Docker CLI, and Kubectl.
+            image 'samolubode/jenkins-docker-k8s:lts'
+
+            // This mounts the host's Docker socket,
+            // allowing the container to run 'docker' commands.
+            // We also mount a volume for Maven caching.
+            args '-v /var/run/docker.sock:/var/run/docker.sock ...'
+        }
+    }
 
     // Tools
     tools {
-        jdk 'JDK-25'
-        maven 'Maven-3.9.8'
+        // jdk 'JDK-25'
+        // maven 'Maven-3.9.8'
         nodejs 'NodeJS-20'
     }
 
