@@ -1,138 +1,176 @@
+// Sample 1: Kubernetes Agent (Pod-per-Stage)
 pipeline {
-    agent {
-        docker {
-            // This must be a custom "fat" image you have built
-            // that contains: JDK, Maven, Docker CLI, and Kubectl.
-            image 'samolubode/jenkins-docker-k8s:lts'
+    // 'agent none' at the top level means each stage
+    // must define its own agent.
+    agent none
 
-            // This mounts the host's Docker socket,
-            // allowing the container to run 'docker' commands.
-            // We also mount a volume for Maven caching.
-            args '-v /var/run/docker.sock:/var/run/docker.sock ...'
-        }
-    }
-
-    // Tools
-    tools {
-        // jdk 'JDK-25'
-        // maven 'Maven-3.9.8'
-        nodejs 'NodeJS-20'
-    }
+    // The 'tools' block is removed because tools are
+    // now provided by container images, not pre-installed
+    // on an agent.
 
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'docker'
         IMAGE_NAME               = 'samolubode/petclinic'
         KUBERNETES_DEPLOYMENT    = 'petclinic-deployment'
         KUBERNETES_NAMESPACE     = 'devops-tools'
-        // Unique image tag for every build
         IMAGE_TAG                = "v${env.BUILD_ID}"
     }
 
     stages {
         // CHECKOUT
         stage('Checkout') {
+            // This first stage can run on any available agent
+            // just to check out the code.
+            agent any
             steps {
                 echo 'Checking out code from GitHub...'
-                // This automatically pulls the code from the repo
-                // configured in the Jenkins job
                 checkout scm
             }
         }
 
         // BUILD
-        // This stage runs on the main agent, which now has
-        // the correct JDK and Maven from the 'tools' block.
         stage('Build') {
+            // This stage runs in a pod with a 'maven' container.
+            // We use a Maven image that includes a JDK.
+            agent {
+                kubernetes {
+                    cloud 'kubernetes' // Optional: specify your Jenkins K8s cloud name
+                    image 'maven:3.9.8-eclipse-temurin-21'
+                    // We can mount a volume for Maven caching
+                    volumeMounts {
+                        volume(type: 'PersistentVolumeClaim', mountPath: '/root/.m2', claimName: 'jenkins-maven-cache', readOnly: false)
+                    }
+                }
+            }
             steps {
-                sh 'node -v'
                 echo 'Building the project...'
-
-                // Add execute permission to the Maven wrapper
                 sh 'chmod +x mvnw'
-
-                // Run the build. This will use the JDK and Maven
-                // that the 'tools' block provides.
+                // Run the build
                 sh './mvnw clean install -DskipTests'
             }
         }
 
         // TEST
         stage('Test') {
+            // This stage uses the same agent setup as the Build stage
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    image 'maven:3.9.8-eclipse-temurin-21'
+                    volumeMounts {
+                        volume(type: 'PersistentVolumeClaim', mountPath: '/root/.m2', claimName: 'jenkins-maven-cache', readOnly: false)
+                    }
+                }
+            }
             steps {
                 echo 'Running unit tests...'
                 sh 'chmod +x mvnw'
-                // This will use the JDK and Maven from the 'tools' block
                 sh './mvnw test'
             }
         }
 
         // STATIC ANALYSIS
         stage('Sonar Code Analysis') {
-            environment {
-                scannerHome = tool 'Sonar7.3'
+            // This also runs in the Maven container.
+            // NOTE: The original's use of 'tool "Sonar7.3"' is
+            // replaced with the standard Maven sonar plugin,
+            // which is a more portable method.
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    image 'maven:3.9.8-eclipse-temurin-21'
+                    volumeMounts {
+                        volume(type: 'PersistentVolumeClaim', mountPath: '/root/.m2', claimName: 'jenkins-maven-cache', readOnly: false)
+                    }
+                }
             }
             steps {
                 withSonarQubeEnv('sonarserver') {
-                    sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=SundayOlubode_spring-petclinic \
-                        -Dsonar.organization=samolubode \
-                        -Dsonar.host.url=https://sonarcloud.io \
-                        -Dsonar.projectName=spring-petclinic \
-                        -Dsonar.projectVersion=1.0 \
-                        -Dsonar.sources=src/ \
-                        -Dsonar.java.binaries=target/classes/ \
-                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                        -Dsonar.jacoco.reportsPath=target/jacoco.exec
-                    """
+                    // Use the Maven plugin for Sonar, which is cleaner
+                    // than using the standalone scanner tool.
+                    sh '''
+                        ./mvnw sonar:sonar \
+                          -Dsonar.projectKey=SundayOlubode_spring-petclinic \
+                          -Dsonar.organization=samolubode \
+                          -Dsonar.host.url=https://sonarcloud.io \
+                          -Dsonar.projectName=spring-petclinic
+                    '''
                 }
             }
         }
 
         // BUILD & PUSH IMAGE
         stage('Build & Push Image') {
+            // This stage uses Kaniko to build an image inside a
+            // container *without* needing a Docker daemon.
+            // This is the standard, secure way to build images in K8s.
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    // Define a pod with the Kaniko executor image
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: kaniko
+                        image: gcr.io/kaniko-project/executor:latest
+                        command: ['/busybox/cat']
+                        tty: true
+                        volumeMounts:
+                          # Mount Docker credentials from a K8s secret
+                          - name: docker-config
+                            mountPath: /kaniko/.docker/
+                      volumes:
+                        - name: docker-config
+                          secret:
+                            secretName: ${DOCKERHUB_CREDENTIALS_ID} # Assumes K8s secret name matches credential ID
+                            items:
+                              - key: .dockerconfigjson
+                                path: config.json
+                    """
+                }
+            }
             steps {
-                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                // Run the Kaniko command in the 'kaniko' container
+                container('kaniko') {
+                    echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
 
-                script {
-                    // Log in to Docker Hub using the credential ID
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
-                        // Build the image and give it the unique tag
-                        def appImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", '.')
+                    // Run the Kaniko executor
+                    sh """
+                    /kaniko/executor \
+                      --context \${WORKSPACE} \
+                      --dockerfile \${WORKSPACE}/Dockerfile \
+                      --destination ${IMAGE_NAME}:${IMAGE_TAG} \
+                      --destination ${IMAGE_NAME}:latest
+                    """
 
-                        // Push the unique tag (e.g., v38)
-                        echo "Pushing image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                        appImage.push()
-
-                        // Also update the 'latest' tag
-                        echo "Pushing image: ${IMAGE_NAME}:latest"
-                        appImage.push('latest')
-                    }
+                    echo "Pushing image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                    echo "Pushing image: ${IMAGE_NAME}:latest"
                 }
             }
         }
 
         // DEPLOY TO KUBERNETES
         stage('Deploy to Kubernetes') {
+            // This stage runs in a pod with just the 'kubectl' tool.
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    image 'bitnami/kubectl:latest'
+                }
+            }
             steps {
                 echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} to Kubernetes..."
 
-                // Use withKubeConfig - automatically find and use the pod's
-                // 'jenkins-admin' ServiceAccount token.
-                withKubeConfig {
-                    // This command updates the image tag in the file
+                // withKubeConfig will automatically use the pod's
+                // own ServiceAccount token for authentication.
+                withKubeConfig() {
                     sh "sed -i 's|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/petclinic-frontend.yaml"
-
-                    // Apply the backend (in case it's not there)
                     sh 'kubectl apply -f k8s/postgres-backend.yaml'
-
-                    // Apply the updated frontend
                     sh 'kubectl apply -f k8s/petclinic-frontend.yaml'
-
                     echo 'Waiting for deployment to complete...'
-                    // Wait for the new pods to become 'Ready'
                     sh "kubectl rollout status deployment/${KUBERNETES_DEPLOYMENT} -n ${KUBERNETES_NAMESPACE}"
-
                     echo 'Deployment successful!'
                 }
             }
