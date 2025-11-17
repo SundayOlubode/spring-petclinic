@@ -106,6 +106,13 @@ pipeline {
                         image: maven:3.9.8-eclipse-temurin-21
                         command: ['cat']
                         tty: true
+                        volumeMounts:
+                          - name: maven-cache
+                            mountPath: /root/.m2
+                      volumes:
+                        - name: maven-cache
+                          persistentVolumeClaim:
+                            claimName: jenkins-maven-cache
                     """
                 // ^-- UPDATED TO YAML --^
                 }
