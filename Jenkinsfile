@@ -25,17 +25,25 @@ pipeline {
             agent {
                 kubernetes {
                     cloud 'kubernetes'
-                    // V-- CORRECTED --V
-                    containerTemplate {
-                        name 'maven'
-                        image 'maven:3.9.8-eclipse-temurin-21'
-                        command 'cat'
-                        ttyEnabled true
-                        volumeMounts {
-                            volume(type: 'PersistentVolumeClaim', mountPath: '/root/.m2', claimName: 'jenkins-maven-cache', readOnly: false)
-                        }
-                    }
-                // ^-- CORRECTED --^
+                    // V-- UPDATED TO YAML --V
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: maven
+                        image: maven:3.9.8-eclipse-temurin-21
+                        command: ['cat']
+                        tty: true
+                        volumeMounts:
+                          - name: maven-cache
+                            mountPath: /root/.m2
+                      volumes:
+                        - name: maven-cache
+                          persistentVolumeClaim:
+                            claimName: jenkins-maven-cache
+                    """
+                // ^-- UPDATED TO YAML --^
                 }
             }
             steps {
@@ -53,17 +61,25 @@ pipeline {
             agent {
                 kubernetes {
                     cloud 'kubernetes'
-                    // V-- CORRECTED --V
-                    containerTemplate {
-                        name 'maven'
-                        image 'maven:3.9.8-eclipse-temurin-21'
-                        command 'cat'
-                        ttyEnabled true
-                        volumeMounts {
-                            volume(type: 'PersistentVolumeClaim', mountPath: '/root/.m2', claimName: 'jenkins-maven-cache', readOnly: false)
-                        }
-                    }
-                // ^-- CORRECTED --^
+                    // V-- UPDATED TO YAML --V
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: maven
+                        image: maven:3.9.8-eclipse-temurin-21
+                        command: ['cat']
+                        tty: true
+                        volumeMounts:
+                          - name: maven-cache
+                            mountPath: /root/.m2
+                      volumes:
+                        - name: maven-cache
+                          persistentVolumeClaim:
+                            claimName: jenkins-maven-cache
+                    """
+                // ^-- UPDATED TO YAML --^
                 }
             }
             steps {
@@ -80,17 +96,25 @@ pipeline {
             agent {
                 kubernetes {
                     cloud 'kubernetes'
-                    // V-- CORRECTED --V
-                    containerTemplate {
-                        name 'maven'
-                        image 'maven:3.9.8-eclipse-temurin-21'
-                        command 'cat'
-                        ttyEnabled true
-                        volumeMounts {
-                            volume(type: 'PersistentVolumeClaim', mountPath: '/root/.m2', claimName: 'jenkins-maven-cache', readOnly: false)
-                        }
-                    }
-                // ^-- CORRECTED --^
+                    // V-- UPDATED TO YAML --V
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: maven
+                        image: maven:3.9.8-eclipse-temurin-21
+                        command: ['cat']
+                        tty: true
+                        volumeMounts:
+                          - name: maven-cache
+                            mountPath: /root/.m2
+                      volumes:
+                        - name: maven-cache
+                          persistentVolumeClaim:
+                            claimName: jenkins-maven-cache
+                    """
+                // ^-- UPDATED TO YAML --^
                 }
             }
             steps {
@@ -109,7 +133,7 @@ pipeline {
         }
 
         // BUILD & PUSH IMAGE
-        // This stage was already correct, as it uses the 'yaml' block
+        // This stage was already correct and did not need changes
         stage('Build & Push Image') {
             agent {
                 kubernetes {
@@ -155,14 +179,18 @@ pipeline {
             agent {
                 kubernetes {
                     cloud 'kubernetes'
-                    // V-- CORRECTED --V
-                    containerTemplate {
-                        name 'kubectl'
-                        image 'bitnami/kubectl:latest'
-                        command 'cat'
-                        ttyEnabled true
-                    }
-                // ^-- CORRECTED --^
+                    // V-- UPDATED TO YAML --V
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: kubectl
+                        image: bitnami/kubectl:latest
+                        command: ['cat']
+                        tty: true
+                    """
+                // ^-- UPDATED TO YAML --^
                 }
             }
             steps {
